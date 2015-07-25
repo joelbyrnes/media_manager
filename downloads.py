@@ -7,29 +7,40 @@ import csv
 complete_dir = '/home/joel/mac-mini.joel/Media Downloads/completed'
 out_dir = '/home/joel/mac-mini.joel/Media Downloads/out_tv'
 
-def list_has_rars(files):
-	for f in files:
-		if f.lower().endswith(".rar") or f.lower().endswith(".r00"):
+def find_first_rar(files):
+	def subfilter(fs):
+		for f in fs:
 			print "(found rar-like file %s)" % f
 			if ".subpack." in f.lower():
 				print "(looks like subpack, ignoring)"
 			else:
-				return True
-	return False
+				return f
+
+	rars = filter(lambda f: f.lower().endswith(".rar"), files)
+	rar = subfilter(rars)
+	if rar:
+		return rar
+
+	r00s = filter(lambda f: f.lower().endswith(".r00"), files)
+	r00 = subfilter(r00s)
+	if r00:
+		return r00
+
+	return None
 
 def walk_path(path, function):
 	if not os.path.exists(path): raise Exception("path does not exist: " + path)
-	if not os.path.isdir(path): return False
+	# if not os.path.isdir(path): return False
 
 	for root, subdirs, files in os.walk(path):
-		function(files)
+		yield function(files)
 
 def dir_has_rars(path):
 	if not os.path.exists(path): raise Exception("path does not exist: " + path)
 	if not os.path.isdir(path): return False
 
 	for root, subdirs, files in os.walk(path):
-		if list_has_rars(files):
+		if find_first_rar(files) != None:
 			return True
 	return False
 
@@ -63,6 +74,7 @@ def main(complete_dir, out_dir, actually_move):
 	print "single files: "
 	for x in [c for c in possibles if not c['is_dir']]:
 		print x
+	print ''
 
 	no_torrent = [c for c in possibles if not c['torrent']]
 	print "no torrent:"
@@ -94,10 +106,44 @@ def main(complete_dir, out_dir, actually_move):
 	else:
 		print 'nothing to move'
 
-if __name__ == "__main__":
 
-	# path = complete_dir + "/The.Walking.Dead.S05E09.720p.HDTV.x264-KILLERS"
-	# print path
+def find_rars(files):
+	for f in files:
+		if f.lower().endswith(".rar") or f.lower().endswith(".r00"):
+			print "(found rar-like file %s)" % f
+			if ".subpack." in f.lower():
+				print "(looks like subpack, ignoring)"
+			else:
+				yield f
+
+
+# figure out if we need to extract and do it
+def extract(complete_dir, folder):
+
+	path = complete_dir + "/" + folder
+	print path
 	# print dir_has_rars(path)
+	# for x in walk_path(path, find_rars):
+	# 	for y in x:
+	# 		print y
+
+	os.chdir(complete_dir)
+
+	for root, subdirs, files in os.walk(folder):
+		print "-- " + root
+		rar = find_first_rar(files)
+		if rar:
+			print "extract " + root + "/" + rar + " to (dest folder)/" + root
+		else:
+			if subdirs:
+				print "dir has subdirs but no rars: mkdir"
+			if not subdirs:
+				print "dir has no subdirs: copy"
+
+	print "done; delete " + folder
+
+if __name__ == "__main__":
+	# extract(complete_dir, "The.Walking.Dead.S05E09.720p.HDTV.x264-KILLERS")
+	# extract(complete_dir, "Parks.and.Recreation.S03.DVDRip.XviD-REWARD")
 
 	main(complete_dir, out_dir, False)
