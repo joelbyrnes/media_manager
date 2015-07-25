@@ -50,16 +50,16 @@ def main(complete_dir, out_dir):
 	for x in [c for c in possibles if not c['is_dir']]:
 		print x
 
-	candidates = [c for c in possibles if not c['torrent']]
+	no_torrent = [c for c in possibles if not c['torrent']]
 	print "no torrent:"
-	for c in candidates:
+	for c in no_torrent:
 		c['has_rars'] = dir_has_rars(c['path'])
 		print "** NOT in Tx: " + c['name']
 
 	to_extract = [c for c in possibles if not c['torrent'] and c['has_rars']]
 
 	print ''
-	print "no torrent but has rars, to extract and delete:"
+	print "no torrent but has rars, to extract and/or delete:"
 	for c in to_extract:
 		print c['name']
 
@@ -72,8 +72,8 @@ def main(complete_dir, out_dir):
 
 	print ''
 
-	# move(to_move, complete_dir, out_dir)
-	# print ''
+	move([c['name'] for c in to_move], complete_dir, out_dir)
+	print ''
 
 if __name__ == "__main__":
 
