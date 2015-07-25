@@ -28,55 +28,52 @@ def move(names, cwd, out_dir):
 		print "moving %s to %s/%s" % (f, out_dir, f)
 		os.rename("%s/%s" % (cwd, f), "%s/%s" % (out_dir, f))
 
-def print_possibles(possibles, tnames):
-	for p in possibles:
-		if p in tnames:
-			print "Tx: " + p
-			pass
-		else:
-			print "** NOT in Tx: " + p
-
-			if dir_has_rars(complete_dir + "/" + p):
-				print "  ** HAS RARS"
-
-
 def main(complete_dir, out_dir):
 
 	tc = transmissionrpc.Client('mac-mini.local', port=9091)
 	torrents = tc.get_torrents()
 
-	tnames = [t.name for t in tc.get_torrents()]
+	tdict = {t.name: t for t in torrents}
 
-	possibles = [x for x in os.listdir(complete_dir) if not x.startswith(".")]
+	on_disk = [x for x in os.listdir(complete_dir) if not x.startswith(".")]
 
-	print_possibles(possibles, tnames)
+	def create_data(p):
+		torrent = tdict[p] if p in tdict else None
+		path = complete_dir + "/" + p
+		data = {'name': p, 'path': path, 'torrent': torrent, 'is_dir': os.path.isdir(path)}
+		# print data
+		return data
 
-	print ""
-	print "mkvs:"
-	mkvs = filter(lambda p: p.lower().endswith(".mkv"), possibles)
+	possibles = map(create_data, on_disk)
 
-	print_possibles(mkvs, tnames)
+	print "single files: "
+	for x in [c for c in possibles if not c['is_dir']]:
+		print x
 
-	print ''
-	print 'to move  if not f in tnames and not dir_has_rars(f)   :'
+	candidates = [c for c in possibles if not c['torrent']]
+	print "no torrent:"
+	for c in candidates:
+		c['has_rars'] = dir_has_rars(c['path'])
+		print "** NOT in Tx: " + c['name']
 
-	to_move = [f for f in possibles if not f in tnames and not dir_has_rars(complete_dir + "/" + f)]
-
-	for f in to_move:
-		print f
-
-	print ''
-	print 'to move  if not f in tnames and dir_has_rars(f):'
-
-	not_to_move = [f for f in possibles if not f in tnames and dir_has_rars(complete_dir + "/" + f)]
-
-	# for f in not_to_move:
-	# 	print f + "  ** HAS RARS"
+	to_extract = [c for c in possibles if not c['torrent'] and c['has_rars']]
 
 	print ''
+	print "no torrent but has rars, to extract and delete:"
+	for c in to_extract:
+		print c['name']
 
-	#move(to_move, complete_dir, out_dir)
-	#print ''
+	to_move = [c for c in possibles if not c['torrent'] and not c['has_rars']]
+
+	print ''
+	print "no torrent and has no rars:"
+	for c in to_move:
+		print c['name']
+
+	print ''
+
+	# move(to_move, complete_dir, out_dir)
+	# print ''
 
 if __name__ == "__main__":
 
