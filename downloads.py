@@ -11,8 +11,18 @@ def list_has_rars(files):
 	for f in files:
 		if f.lower().endswith(".rar") or f.lower().endswith(".r00"):
 			print "(found rar-like file %s)" % f
-			return True
+			if ".subpack." in f.lower():
+				print "(looks like subpack, ignoring)"
+			else:
+				return True
 	return False
+
+def walk_path(path, function):
+	if not os.path.exists(path): raise Exception("path does not exist: " + path)
+	if not os.path.isdir(path): return False
+
+	for root, subdirs, files in os.walk(path):
+		function(files)
 
 def dir_has_rars(path):
 	if not os.path.exists(path): raise Exception("path does not exist: " + path)
@@ -28,7 +38,7 @@ def move(names, cwd, out_dir):
 		print "moving %s to %s/%s" % (f, out_dir, f)
 		os.rename("%s/%s" % (cwd, f), "%s/%s" % (out_dir, f))
 
-def main(complete_dir, out_dir):
+def main(complete_dir, out_dir, actually_move):
 
 	tc = transmissionrpc.Client('mac-mini.local', port=9091)
 	torrents = tc.get_torrents()
@@ -36,6 +46,10 @@ def main(complete_dir, out_dir):
 	tdict = {t.name: t for t in torrents}
 
 	on_disk = [x for x in os.listdir(complete_dir) if not x.startswith(".")]
+
+	print "%d paths to check" % len(on_disk)
+	print "%d torrents" % len(torrents)
+	print ''
 
 	def create_data(p):
 		torrent = tdict[p] if p in tdict else None
@@ -71,9 +85,14 @@ def main(complete_dir, out_dir):
 		print c['name']
 
 	print ''
-
-	move([c['name'] for c in to_move], complete_dir, out_dir)
-	print ''
+	if to_move:
+		if actually_move:
+			move([c['name'] for c in to_move], complete_dir, out_dir)
+			print ''
+		else:
+			print "not actually moving files as flag not set"
+	else:
+		print 'nothing to move'
 
 if __name__ == "__main__":
 
@@ -81,4 +100,4 @@ if __name__ == "__main__":
 	# print path
 	# print dir_has_rars(path)
 
-	main(complete_dir, out_dir)
+	main(complete_dir, out_dir, False)
