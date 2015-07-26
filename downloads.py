@@ -3,6 +3,7 @@ import os
 import sys
 import datetime
 import csv
+import re
 
 complete_dir = '/home/joel/mac-mini.joel/Media Downloads/completed'
 out_dir = '/home/joel/mac-mini.joel/Media Downloads/out_tv'
@@ -10,7 +11,7 @@ out_dir = '/home/joel/mac-mini.joel/Media Downloads/out_tv'
 def find_first_rar(files):
 	def subfilter(fs):
 		for f in fs:
-			if ".subpack." in f.lower():
+			if ".subpack." in f.lower() or "/subs/" in f.lower() or "subs" in f.lower():
 				# print "(found rar-like file %s that looks like subpack, ignoring)"
 				pass
 			else:
@@ -28,13 +29,6 @@ def find_first_rar(files):
 		return r00
 
 	return None
-
-def walk_path(path, function):
-	if not os.path.exists(path): raise Exception("path does not exist: " + path)
-	# if not os.path.isdir(path): return False
-
-	for root, subdirs, files in os.walk(path):
-		yield function(files)
 
 def dir_has_rars(path):
 	if not os.path.exists(path): raise Exception("path does not exist: " + path)
@@ -135,21 +129,6 @@ def main(complete_dir, out_dir, take_action):
 	print ''
 
 	# printall([c for c in possibles if not c['is_dir']], "single files:")
-	#
-	# no_torrent = [c for c in possibles if not c['torrent']]
-	# printall(no_torrent, "no torrent:")
-	#
-	# to_extract = [c for c in possibles if not c['torrent'] and c['has_rars']]
-	# printall(to_extract, "no torrent but has rars, to extract and/or delete:")
-	#
-	# to_move = [c for c in possibles if not c['torrent'] and not c['has_rars']]
-	# printall(to_move, "no torrent and has no rars:")
-	#
-	# finished = [c for c in possibles if (c['torrent'] and c['torrent'].isFinished) and not c['has_rars']]
-	# printall(finished, "torrents finished and has no rars:")
-	#
-	# finished = [c for c in possibles if (c['torrent'] and c['torrent'].status == "stopped" and c['torrent'].error == 0) and not c['has_rars']]
-	# printall(finished, "torrents stopped with no error and has no rars:")
 
 	to_move = [c for c in possibles if not c['torrent'] and not c['has_rars']]
 
@@ -178,7 +157,16 @@ def main(complete_dir, out_dir, take_action):
 			print "not actually moving as take action is false"
 	else:
 		print 'nothing to move'
+	print ''
 
+	to_extract = [c for c in possibles if not c['torrent'] and c['has_rars']]
+	printall(to_extract, "no torrent but has rars, to extract and/or delete:")
+
+	to_extract_and_remove = [c for c in possibles if (c['torrent'] and c['torrent'].isFinished) and c['has_rars']]
+	to_extract_and_remove.extend([c for c in possibles if (c['torrent'] and c['torrent'].status == "stopped" and c['torrent'].error == 0) and c['has_rars']])
+	printall(to_extract_and_remove, "finished torrent with rars, to extract and remove torrent and data:")
+
+	# tc.remove_torrent(ids, delete_data=False)
 
 def find_rars(files):
 	for f in files:
@@ -191,14 +179,13 @@ def find_rars(files):
 
 
 # figure out if we need to extract and do it
-def extract(complete_dir, folder):
+def extract(complete_dir, folder, take_action):
 
 	path = complete_dir + "/" + folder
 	print path
-	# print dir_has_rars(path)
-	# for x in walk_path(path, find_rars):
-	# 	for y in x:
-	# 		print y
+	if not dir_has_rars(path):
+		print "no rars to extract - do recursive copy"
+		return
 
 	os.chdir(complete_dir)
 
@@ -207,16 +194,25 @@ def extract(complete_dir, folder):
 		rar = find_first_rar(files)
 		if rar:
 			print "extract " + root + "/" + rar + " to (dest folder)/" + root
+			# copy other non-rar files
+			# print re.findall(".rar$", )
+			others = filter(lambda f: not f.endswith('rar') and not re.match(".*\.r\d\d$", f), files)
+			print "copy to " + root, others
+
 		else:
 			if subdirs:
 				print "dir has subdirs but no rars: mkdir"
 			if not subdirs:
-				print "dir has no subdirs: copy"
+				print "dir has no subdirs: copy all"
 
-	print "done; delete " + folder
+	print "done; can delete " + folder
 
 if __name__ == "__main__":
-	# extract(complete_dir, "The.Walking.Dead.S05E09.720p.HDTV.x264-KILLERS")
-	# extract(complete_dir, "Parks.and.Recreation.S03.DVDRip.XviD-REWARD")
+	take_action = False
 
-	main(complete_dir, out_dir, False)
+	# extract(complete_dir, "The.Walking.Dead.S05E09.720p.HDTV.x264-KILLERS", take_action)               # simple ep
+	# extract(complete_dir, "Parks.and.Recreation.S03.DVDRip.XviD-REWARD", take_action)                  # eps, subpack
+	# extract(complete_dir, "Kingsman.The.Secret.Service.2014.UNCUT.720p.BluRay.x264-VETO", take_action)   # subs
+	# extract(complete_dir, "Game.of.Thrones.S05E10.720p.HDTV.x264-IMMERSE", take_action)                  # no rars
+
+	main(complete_dir, out_dir, take_action)
