@@ -46,7 +46,7 @@ def copy_files(names, cwd, out_dir):
 # figure out if we need to extract and do it
 def extract(src, extract_dir, dry_run=False):
 
-	# src = os.path.join(complete_dir, folder)
+	src = os.path.abspath(src)
 	dirname = os.path.dirname(src)
 	basename = os.path.basename(src)
 	dest = os.path.join(extract_dir, basename)
