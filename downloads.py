@@ -57,7 +57,7 @@ def printall(candidates, title):
 		print c['name']
 	print ''
 
-def write_report(filename, possibles):
+def write_report(filename, candidates):
 	with open(filename, 'wb') as f:
 		output_writer = csv.writer(f, delimiter=',', quoting=csv.QUOTE_ALL)
 		output_writer.writerow([
@@ -70,22 +70,44 @@ def write_report(filename, possibles):
 			'isFinished',
 			'is_dir',
 			'has_rars',
+			'action',
 			])
-		for c in possibles:
+		for c in candidates:
+			t = c['torrent']
+
 			row = [
 				c['name'],
-				c['torrent'] is not None,
-				c['torrent'].date_added if c['torrent'] else None,
-				c['torrent'].status if c['torrent'] else None,
-				c['torrent'].error if c['torrent'] else None,
-				c['torrent'].errorString if c['torrent'] else None,
-				c['torrent'].isFinished if c['torrent'] else None,
+				t is not None,
+				t.date_added if t else None,
+				t.status if t else None,
+				t.error if t else None,
+				t.errorString if t else None,
+				t.isFinished if t else None,
 				c['is_dir'],
 				c['has_rars'],
 				]
+
+			if t and t.error != 0:
+				print t, t.error, t.errorString
+
+			if not t and not c['has_rars']:
+				row.append('move')
+			elif not t and c['has_rars']:
+				row.append('extract and delete files')
+			elif (t and t.isFinished) and not c['has_rars']:
+				row.append('move and remove torrent')
+			elif (t and t.status == "stopped" and t.error == 0) and not c['has_rars']:
+				row.append('move and remove torrent')
+			elif (t and t.status == "stopped" and t.error == 0) and c['has_rars']:
+				row.append('extract files and remove torrent and data')
+
+			elif t and t.status == "seeding" or t.status == "downloading" or t.status == "download pending":
+				row.append('-')
+			else:
+				row.append('???')
 			output_writer.writerow(row)
 
-def main(complete_dir, out_dir, actually_move):
+def main(complete_dir, out_dir, take_action):
 
 	tc = transmissionrpc.Client('mac-mini.local', port=9091)
 	torrents = tc.get_torrents()
@@ -132,11 +154,11 @@ def main(complete_dir, out_dir, actually_move):
 
 	print ''
 	if to_move:
-		if actually_move:
+		if take_action:
 			move([c['name'] for c in to_move], complete_dir, out_dir)
 			print ''
 		else:
-			print "not actually moving files as flag not set"
+			print "not actually moving files as take action not set"
 	else:
 		print 'nothing to move'
 
