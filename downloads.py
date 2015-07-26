@@ -10,10 +10,11 @@ out_dir = '/home/joel/mac-mini.joel/Media Downloads/out_tv'
 def find_first_rar(files):
 	def subfilter(fs):
 		for f in fs:
-			print "(found rar-like file %s)" % f
 			if ".subpack." in f.lower():
-				print "(looks like subpack, ignoring)"
+				# print "(found rar-like file %s that looks like subpack, ignoring)"
+				pass
 			else:
+				# print "(found rar-like file %s)" % f
 				return f
 
 	rars = filter(lambda f: f.lower().endswith(".rar"), files)
@@ -49,6 +50,41 @@ def move(names, cwd, out_dir):
 		print "moving %s to %s/%s" % (f, out_dir, f)
 		os.rename("%s/%s" % (cwd, f), "%s/%s" % (out_dir, f))
 
+def printall(candidates, title):
+	print title
+	print len(candidates)
+	for c in candidates:
+		print c['name']
+	print ''
+
+def write_report(filename, possibles):
+	with open(filename, 'wb') as f:
+		output_writer = csv.writer(f, delimiter=',', quoting=csv.QUOTE_ALL)
+		output_writer.writerow([
+			'name',
+			'has_torrent',
+			'date_added',
+			'status',
+			'error',
+			'errorString',
+			'isFinished',
+			'is_dir',
+			'has_rars',
+			])
+		for c in possibles:
+			row = [
+				c['name'],
+				c['torrent'] is not None,
+				c['torrent'].date_added if c['torrent'] else None,
+				c['torrent'].status if c['torrent'] else None,
+				c['torrent'].error if c['torrent'] else None,
+				c['torrent'].errorString if c['torrent'] else None,
+				c['torrent'].isFinished if c['torrent'] else None,
+				c['is_dir'],
+				c['has_rars'],
+				]
+			output_writer.writerow(row)
+
 def main(complete_dir, out_dir, actually_move):
 
 	tc = transmissionrpc.Client('mac-mini.local', port=9091)
@@ -60,41 +96,39 @@ def main(complete_dir, out_dir, actually_move):
 
 	print "%d paths to check" % len(on_disk)
 	print "%d torrents" % len(torrents)
-	print ''
 
 	def create_data(p):
 		torrent = tdict[p] if p in tdict else None
 		path = complete_dir + "/" + p
-		data = {'name': p, 'path': path, 'torrent': torrent, 'is_dir': os.path.isdir(path)}
+		data = {'name': p, 'path': path, 'torrent': torrent, 'is_dir': os.path.isdir(path),
+				'has_rars': dir_has_rars(path)}
 		# print data
 		return data
 
 	possibles = map(create_data, on_disk)
 
-	print "single files: "
-	for x in [c for c in possibles if not c['is_dir']]:
-		print x
+	write_report("report.csv", possibles)
+	print "wrote report to report.csv"
+
 	print ''
+
+	printall([c for c in possibles if not c['is_dir']], "single files:")
 
 	no_torrent = [c for c in possibles if not c['torrent']]
-	print "no torrent:"
-	for c in no_torrent:
-		c['has_rars'] = dir_has_rars(c['path'])
-		print "** NOT in Tx: " + c['name']
+	printall(no_torrent, "no torrent:")
 
 	to_extract = [c for c in possibles if not c['torrent'] and c['has_rars']]
-
-	print ''
-	print "no torrent but has rars, to extract and/or delete:"
-	for c in to_extract:
-		print c['name']
+	printall(to_extract, "no torrent but has rars, to extract and/or delete:")
 
 	to_move = [c for c in possibles if not c['torrent'] and not c['has_rars']]
+	printall(to_move, "no torrent and has no rars:")
 
-	print ''
-	print "no torrent and has no rars:"
-	for c in to_move:
-		print c['name']
+	finished = [c for c in possibles if (c['torrent'] and c['torrent'].isFinished) and not c['has_rars']]
+	printall(finished, "torrents finished and has no rars:")
+
+	finished = [c for c in possibles if (c['torrent'] and c['torrent'].status == "stopped" and c['torrent'].error == 0) and not c['has_rars']]
+	printall(finished, "torrents stopped with no error and has no rars:")
+
 
 	print ''
 	if to_move:
