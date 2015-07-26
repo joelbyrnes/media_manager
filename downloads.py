@@ -158,7 +158,7 @@ def main(completed_dir, move_dir, dest, dry_run, delete):
 	# TODO params
 	tc = transmissionrpc.Client('mac-mini.local', port=9091)
 
-	manage(tc, completed_dir, move_dir, dest, dry_run)
+	manage(tc, completed_dir, move_dir, dest, dry_run, delete)
 
 if __name__ == '__main__':
 	sys.exit(main())
