@@ -1,10 +1,8 @@
-import transmissionrpc
 import os
 import sys
-import datetime
-import csv
 import re
 from subprocess import call
+import shutil
 
 def find_first_rar(files):
 	def subfilter(fs):
@@ -37,10 +35,11 @@ def dir_has_rars(path):
 			return True
 	return False
 
-def move_files(names, cwd, out_dir):
+def copy_files(names, cwd, out_dir):
 	for f in names:
-		print "moving %s to %s/%s" % (f, out_dir, f)
-		os.rename("%s/%s" % (cwd, f), "%s/%s" % (out_dir, f))
+		dest = os.path.join(out_dir, f)
+		print "copying %s to %s" % (f, dest)
+		shutil.copy2(os.path.join(cwd, f), dest)
 
 
 # figure out if we need to extract and do it
@@ -65,18 +64,22 @@ def extract(complete_dir, folder, extract_dir, take_action=True):
 
 	for root, subdirs, files in os.walk(src):
 		print "-- " + root
+		relative_path = root.split(complete_dir + "/")[1]
+		current_dest = os.path.join(extract_dir, relative_path)
+
 		rar = find_first_rar(files)
 		if rar:
 			rar_path = os.path.join(root, rar)
-			print "extract " + rar_path + " to " + dest
+			print "extract " + rar_path + " to " + current_dest
 
 			if take_action:
 				# extract with full path, do not overwrite
-				code = call(["unrar", "x", '-o-', rar_path, dest])
+				code = call(["unrar", "x", '-o-', rar_path, current_dest])
 
 				if code != 0 and code != 10:
 					# 10 is "No files to extract" - can mean files already exists, or can't find dest.
-					raise Exception("call to unrar returned code %d" % code)
+					# raise Exception("call to unrar returned code %d" % code)
+					print "ERROR: call to unrar returned code %d" % code
 			else:
 				print "take_action is False"
 
@@ -84,14 +87,19 @@ def extract(complete_dir, folder, extract_dir, take_action=True):
 			# print re.findall(".rar$", )
 			others = filter(lambda f: not f.endswith('rar') and not re.match(".*\.r\d\d$", f), files)
 			print "copy to " + root, others
+			copy_files(others, root, current_dest)
 
 		else:
 			if subdirs:
 				print "dir has subdirs but no rars: mkdir"
 			if not subdirs:
 				print "dir has no subdirs: copy all"
+				print "copy to " + current_dest, files
+				if not os.path.exists(current_dest):
+					os.makedirs(current_dest)
+				copy_files(files, root, current_dest)
 
-	print "done; can delete " + folder
+	print "done extracting " + folder
 
 if __name__ == "__main__":
 	take_action = True
@@ -99,6 +107,7 @@ if __name__ == "__main__":
 	complete_dir = '/home/joel/mac-mini.joel/Media Downloads/completed'
 	extract_dir = "dest"
 
+	# extract(complete_dir, "Twin.Peaks.S02E18.720p.BluRay.X264-REWARD", extract_dir, take_action)               # broken rar
 	extract(complete_dir, "Adventure.Time.S06E03.720p.HDTV.x264-W4F", extract_dir, take_action)               # simple ep
 	# extract(complete_dir, "The.Walking.Dead.S05E09.720p.HDTV.x264-KILLERS", extract_dir, take_action)               # simple ep
 	# extract(complete_dir, "Parks.and.Recreation.S03.DVDRip.XviD-REWARD", take_action)                  # eps, subpack

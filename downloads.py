@@ -1,11 +1,13 @@
 import transmissionrpc
 import os
 import sys
-import datetime
 import csv
-import re
-from subprocess import call
-from extract import extract, dir_has_rars, move_files
+from extract import extract, dir_has_rars
+
+def move_files(names, cwd, out_dir):
+	for f in names:
+		print "moving %s to %s/%s" % (f, out_dir, f)
+		os.rename("%s/%s" % (cwd, f), "%s/%s" % (out_dir, f))
 
 def printall(candidates, title):
 	print title
