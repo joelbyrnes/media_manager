@@ -3,6 +3,7 @@ import sys
 import re
 from subprocess import call
 import shutil
+import click
 
 def find_first_rar(files):
 	def subfilter(fs):
@@ -43,7 +44,7 @@ def copy_files(names, cwd, out_dir):
 
 
 # figure out if we need to extract and do it
-def extract(complete_dir, folder, extract_dir, take_action=True):
+def extract(complete_dir, folder, extract_dir, dry_run=False):
 
 	src = os.path.join(complete_dir, folder)
 	dest = os.path.join(extract_dir, folder)
@@ -72,7 +73,7 @@ def extract(complete_dir, folder, extract_dir, take_action=True):
 			rar_path = os.path.join(root, rar)
 			print "extract " + rar_path + " to " + current_dest
 
-			if take_action:
+			if not dry_run:
 				# extract with full path, do not overwrite
 				code = call(["unrar", "x", '-o-', rar_path, current_dest])
 
@@ -81,7 +82,7 @@ def extract(complete_dir, folder, extract_dir, take_action=True):
 					# raise Exception("call to unrar returned code %d" % code)
 					print "ERROR: call to unrar returned code %d" % code
 			else:
-				print "take_action is False"
+				print "dry run only"
 
 			# copy other non-rar files
 			# print re.findall(".rar$", )
@@ -95,21 +96,31 @@ def extract(complete_dir, folder, extract_dir, take_action=True):
 			if not subdirs:
 				print "dir has no subdirs: copy all"
 				print "copy to " + current_dest, files
-				if not os.path.exists(current_dest):
-					os.makedirs(current_dest)
-				copy_files(files, root, current_dest)
+				if not dry_run:
+					if not os.path.exists(current_dest):
+						os.makedirs(current_dest)
+					copy_files(files, root, current_dest)
+				else:
+					print "dry run only"
 
-	print "done extracting " + folder
+	print ''
+	print "Done extracting " + folder
 
-if __name__ == "__main__":
-	take_action = True
-
-	complete_dir = '/home/joel/mac-mini.joel/Media Downloads/completed'
-	extract_dir = "dest"
+@click.command()
+@click.option('--completed_dir', prompt=True, help='Root of download location')
+@click.option('--folder', prompt=True, help='Folder to extract/copy')
+@click.option('--dest', prompt=True, help='Destination')
+@click.option('--dry_run', help='Don\'t actually make changes', default=False)
+def main(completed_dir, folder, dest, dry_run):
 
 	# extract(complete_dir, "Twin.Peaks.S02E18.720p.BluRay.X264-REWARD", extract_dir, take_action)               # broken rar
-	extract(complete_dir, "Adventure.Time.S06E03.720p.HDTV.x264-W4F", extract_dir, take_action)               # simple ep
+	# extract(completed_dir, "Adventure.Time.S06E03.720p.HDTV.x264-W4F", dest, not dry_run)               # simple ep
 	# extract(complete_dir, "The.Walking.Dead.S05E09.720p.HDTV.x264-KILLERS", extract_dir, take_action)               # simple ep
 	# extract(complete_dir, "Parks.and.Recreation.S03.DVDRip.XviD-REWARD", take_action)                  # eps, subpack
 	# extract(complete_dir, "Kingsman.The.Secret.Service.2014.UNCUT.720p.BluRay.x264-VETO", take_action)   # subs
 	# extract(complete_dir, "Game.of.Thrones.S05E10.720p.HDTV.x264-IMMERSE", take_action)                  # no rars
+
+	extract(completed_dir, folder, dest, dry_run)
+
+if __name__ == '__main__':
+	sys.exit(main())
