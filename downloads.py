@@ -4,9 +4,7 @@ import sys
 import datetime
 import csv
 import re
-
-complete_dir = '/home/joel/mac-mini.joel/Media Downloads/completed'
-out_dir = '/home/joel/mac-mini.joel/Media Downloads/out_tv'
+from subprocess import call
 
 def find_first_rar(files):
 	def subfilter(fs):
@@ -95,7 +93,7 @@ def write_report(filename, candidates):
 			elif (t and t.status == "stopped" and t.error == 0) and c['has_rars']:
 				row.append('extract files and remove torrent and data')
 
-			elif t and t.status == "seeding" or t.status == "downloading" or t.status == "download pending":
+			elif t and t.status == "seeding" or t.status == "downloading" or t.status == "download pending" or t.status == "checking":
 				row.append('-')
 			else:
 				row.append('???')
@@ -179,21 +177,42 @@ def find_rars(files):
 
 
 # figure out if we need to extract and do it
-def extract(complete_dir, folder, take_action):
+def extract(complete_dir, folder, extract_dir, take_action=True):
 
-	path = complete_dir + "/" + folder
-	print path
-	if not dir_has_rars(path):
+	src = os.path.join(complete_dir, folder)
+	dest = os.path.join(extract_dir, folder)
+
+	# print path
+	if not os.path.exists(src):
+		print "path does not exist"
+		return
+
+	if not dir_has_rars(src):
 		print "no rars to extract - do recursive copy"
 		return
 
-	os.chdir(complete_dir)
+	if not os.path.exists(dest):
+		os.makedirs(dest)
 
-	for root, subdirs, files in os.walk(folder):
+	print "Trying to unrar %s to %s" % (src, dest)
+
+	for root, subdirs, files in os.walk(src):
 		print "-- " + root
 		rar = find_first_rar(files)
 		if rar:
-			print "extract " + root + "/" + rar + " to (dest folder)/" + root
+			rar_path = os.path.join(root, rar)
+			print "extract " + rar_path + " to " + dest
+
+			if take_action:
+				# extract with full path, do not overwrite
+				code = call(["unrar", "x", '-o-', rar_path, dest])
+
+				if code != 0 and code != 10:
+					# 10 is "No files to extract" - can mean files already exists, or can't find dest.
+					raise Exception("call to unrar returned code %d" % code)
+			else:
+				print "take_action is False"
+
 			# copy other non-rar files
 			# print re.findall(".rar$", )
 			others = filter(lambda f: not f.endswith('rar') and not re.match(".*\.r\d\d$", f), files)
@@ -208,9 +227,14 @@ def extract(complete_dir, folder, take_action):
 	print "done; can delete " + folder
 
 if __name__ == "__main__":
-	take_action = False
+	take_action = True
 
-	# extract(complete_dir, "The.Walking.Dead.S05E09.720p.HDTV.x264-KILLERS", take_action)               # simple ep
+	complete_dir = '/home/joel/mac-mini.joel/Media Downloads/completed'
+	out_dir = '/home/joel/mac-mini.joel/Media Downloads/out_tv'
+	extract_dir = "dest"
+
+	# extract(complete_dir, "Adventure.Time.S06E03.720p.HDTV.x264-W4F", extract_dir, take_action)               # simple ep
+	# extract(complete_dir, "The.Walking.Dead.S05E09.720p.HDTV.x264-KILLERS", extract_dir, take_action)               # simple ep
 	# extract(complete_dir, "Parks.and.Recreation.S03.DVDRip.XviD-REWARD", take_action)                  # eps, subpack
 	# extract(complete_dir, "Kingsman.The.Secret.Service.2014.UNCUT.720p.BluRay.x264-VETO", take_action)   # subs
 	# extract(complete_dir, "Game.of.Thrones.S05E10.720p.HDTV.x264-IMMERSE", take_action)                  # no rars
