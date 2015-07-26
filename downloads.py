@@ -134,31 +134,48 @@ def main(complete_dir, out_dir, take_action):
 
 	print ''
 
-	printall([c for c in possibles if not c['is_dir']], "single files:")
-
-	no_torrent = [c for c in possibles if not c['torrent']]
-	printall(no_torrent, "no torrent:")
-
-	to_extract = [c for c in possibles if not c['torrent'] and c['has_rars']]
-	printall(to_extract, "no torrent but has rars, to extract and/or delete:")
+	# printall([c for c in possibles if not c['is_dir']], "single files:")
+	#
+	# no_torrent = [c for c in possibles if not c['torrent']]
+	# printall(no_torrent, "no torrent:")
+	#
+	# to_extract = [c for c in possibles if not c['torrent'] and c['has_rars']]
+	# printall(to_extract, "no torrent but has rars, to extract and/or delete:")
+	#
+	# to_move = [c for c in possibles if not c['torrent'] and not c['has_rars']]
+	# printall(to_move, "no torrent and has no rars:")
+	#
+	# finished = [c for c in possibles if (c['torrent'] and c['torrent'].isFinished) and not c['has_rars']]
+	# printall(finished, "torrents finished and has no rars:")
+	#
+	# finished = [c for c in possibles if (c['torrent'] and c['torrent'].status == "stopped" and c['torrent'].error == 0) and not c['has_rars']]
+	# printall(finished, "torrents stopped with no error and has no rars:")
 
 	to_move = [c for c in possibles if not c['torrent'] and not c['has_rars']]
-	printall(to_move, "no torrent and has no rars:")
 
-	finished = [c for c in possibles if (c['torrent'] and c['torrent'].isFinished) and not c['has_rars']]
-	printall(finished, "torrents finished and has no rars:")
+	to_remove = [c for c in possibles if (c['torrent'] and c['torrent'].isFinished) and not c['has_rars']]
+	to_remove.extend([c for c in possibles if (c['torrent'] and c['torrent'].status == "stopped" and c['torrent'].error == 0) and not c['has_rars']])
 
-	finished = [c for c in possibles if (c['torrent'] and c['torrent'].status == "stopped" and c['torrent'].error == 0) and not c['has_rars']]
-	printall(finished, "torrents stopped with no error and has no rars:")
+	for r in to_remove:
+		print "removing torrent " + r['name']
+		if take_action:
+			t = r['torrent']
+			tc.stop_torrent(t.id)
+			tc.remove_torrent(t.hashString)
+			pass
+		else:
+			print "not actually removing torrent as take action is false"
 
+	to_move.extend(to_remove)
 
 	print ''
 	if to_move:
+		print "moving %d dirs/files" % len(to_move)
 		if take_action:
 			move([c['name'] for c in to_move], complete_dir, out_dir)
 			print ''
 		else:
-			print "not actually moving files as take action not set"
+			print "not actually moving as take action is false"
 	else:
 		print 'nothing to move'
 
