@@ -55,7 +55,7 @@ def extract(complete_dir, folder, extract_dir, dry_run=False):
 		return
 
 	if not dir_has_rars(src):
-		print "no rars to extract - do recursive copy"
+		print "no rars found to extract - do recursive copy"
 		return
 
 	print "Trying to extract/copy %s to %s" % (src, dest)
@@ -113,14 +113,6 @@ def extract(complete_dir, folder, extract_dir, dry_run=False):
 @click.option('--dest', prompt=True, help='Destination')
 @click.option('--dry_run', help='Don\'t actually make changes', default=False)
 def main(completed_dir, folder, dest, dry_run):
-
-	# extract(complete_dir, "Twin.Peaks.S02E18.720p.BluRay.X264-REWARD", extract_dir, take_action)               # broken rar
-	# extract(completed_dir, "Adventure.Time.S06E03.720p.HDTV.x264-W4F", dest, not dry_run)               # simple ep
-	# extract(complete_dir, "The.Walking.Dead.S05E09.720p.HDTV.x264-KILLERS", extract_dir, take_action)               # simple ep
-	# extract(complete_dir, "Parks.and.Recreation.S03.DVDRip.XviD-REWARD", take_action)                  # eps, subpack
-	# extract(complete_dir, "Kingsman.The.Secret.Service.2014.UNCUT.720p.BluRay.x264-VETO", take_action)   # subs
-	# extract(complete_dir, "Game.of.Thrones.S05E10.720p.HDTV.x264-IMMERSE", take_action)                  # no rars
-
 	extract(completed_dir, folder, dest, dry_run)
 
 if __name__ == '__main__':
