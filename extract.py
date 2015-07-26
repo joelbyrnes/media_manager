@@ -58,15 +58,15 @@ def extract(complete_dir, folder, extract_dir, dry_run=False):
 		print "no rars to extract - do recursive copy"
 		return
 
-	if not os.path.exists(dest):
-		os.makedirs(dest)
-
-	print "Trying to unrar %s to %s" % (src, dest)
+	print "Trying to extract/copy %s to %s" % (src, dest)
 
 	for root, subdirs, files in os.walk(src):
 		print "-- " + root
 		relative_path = root.split(complete_dir + "/")[1]
 		current_dest = os.path.join(extract_dir, relative_path)
+
+		if not os.path.exists(current_dest):
+			os.makedirs(current_dest)
 
 		rar = find_first_rar(files)
 		if rar:
@@ -88,17 +88,18 @@ def extract(complete_dir, folder, extract_dir, dry_run=False):
 			# print re.findall(".rar$", )
 			others = filter(lambda f: not f.endswith('rar') and not re.match(".*\.r\d\d$", f), files)
 			print "copy to " + root, others
-			copy_files(others, root, current_dest)
+			if not dry_run:
+				copy_files(others, root, current_dest)
+			else:
+				print "dry run only"
 
 		else:
 			if subdirs:
-				print "dir has subdirs but no rars: mkdir"
+				print "dir has subdirs but no rars"
 			if not subdirs:
 				print "dir has no subdirs: copy all"
 				print "copy to " + current_dest, files
 				if not dry_run:
-					if not os.path.exists(current_dest):
-						os.makedirs(current_dest)
 					copy_files(files, root, current_dest)
 				else:
 					print "dry run only"
