@@ -44,10 +44,12 @@ def copy_files(names, cwd, out_dir):
 
 
 # figure out if we need to extract and do it
-def extract(complete_dir, folder, extract_dir, dry_run=False):
+def extract(src, extract_dir, dry_run=False):
 
-	src = os.path.join(complete_dir, folder)
-	dest = os.path.join(extract_dir, folder)
+	# src = os.path.join(complete_dir, folder)
+	dirname = os.path.dirname(src)
+	basename = os.path.basename(src)
+	dest = os.path.join(extract_dir, basename)
 
 	# print path
 	if not os.path.exists(src):
@@ -62,7 +64,7 @@ def extract(complete_dir, folder, extract_dir, dry_run=False):
 
 	for root, subdirs, files in os.walk(src):
 		print "-- " + root
-		relative_path = root.split(complete_dir + "/")[1]
+		relative_path = root.split(dirname + "/")[1]
 		current_dest = os.path.join(extract_dir, relative_path)
 
 		if not os.path.exists(current_dest):
@@ -105,15 +107,14 @@ def extract(complete_dir, folder, extract_dir, dry_run=False):
 					print "dry run only"
 
 	print ''
-	print "Done extracting " + folder
+	print "Done extracting " + basename
 
 @click.command()
-@click.option('--completed_dir', prompt=True, help='Root of download location')
-@click.option('--folder', prompt=True, help='Folder to extract/copy')
+@click.option('--src', prompt=True, help='Folder to extract/copy')
 @click.option('--dest', prompt=True, help='Destination')
 @click.option('--dry_run', help='Don\'t actually make changes', default=False)
-def main(completed_dir, folder, dest, dry_run):
-	extract(completed_dir, folder, dest, dry_run)
+def main(src, dest, dry_run):
+	extract(src, dest, dry_run)
 
 if __name__ == '__main__':
 	sys.exit(main())

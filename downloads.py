@@ -2,6 +2,7 @@ import transmissionrpc
 import os
 import sys
 import csv
+import click
 from extract import extract, dir_has_rars
 
 def move_files(names, cwd, out_dir):
@@ -66,9 +67,8 @@ def write_report(filename, candidates):
 				row.append('???')
 			output_writer.writerow(row)
 
-def main(complete_dir, out_dir, take_action):
+def manage(tc, complete_dir, out_dir, extract_dir, dry_run=False):
 
-	tc = transmissionrpc.Client('mac-mini.local', port=9091)
 	torrents = tc.get_torrents()
 
 	tdict = {t.name: t for t in torrents}
@@ -102,24 +102,24 @@ def main(complete_dir, out_dir, take_action):
 
 	for r in to_remove:
 		print "removing torrent " + r['name']
-		if take_action:
+		if not dry_run:
 			t = r['torrent']
 			tc.stop_torrent(t.id)
 			tc.remove_torrent(t.hashString)
 			pass
 		else:
-			print "not actually removing torrent as take action is false"
+			print "dry run only"
 
 	to_move.extend(to_remove)
 
 	print ''
 	if to_move:
 		print "moving %d dirs/files" % len(to_move)
-		if take_action:
+		if not dry_run:
 			move_files([c['name'] for c in to_move], complete_dir, out_dir)
 			print ''
 		else:
-			print "not actually moving as take action is false"
+			print "dry run only"
 	else:
 		print 'nothing to move'
 	print ''
@@ -127,18 +127,26 @@ def main(complete_dir, out_dir, take_action):
 	to_extract = [c for c in possibles if not c['torrent'] and c['has_rars']]
 	printall(to_extract, "no torrent but has rars, to extract and/or delete:")
 
-	to_extract_and_remove = [c for c in possibles if (c['torrent'] and c['torrent'].isFinished) and c['has_rars']]
-	to_extract_and_remove.extend([c for c in possibles if (c['torrent'] and c['torrent'].status == "stopped" and c['torrent'].error == 0) and c['has_rars']])
-	printall(to_extract_and_remove, "finished torrent with rars, to extract and remove torrent and data:")
+	for c in to_extract[0:1]:
+		extract(os.path.join(complete_dir, c['name']), extract_dir, dry_run)
+		# TODO delete
 
-	# tc.remove_torrent(ids, delete_data=False)
+	# to_extract_and_remove = [c for c in possibles if (c['torrent'] and c['torrent'].isFinished) and c['has_rars']]
+	# to_extract_and_remove.extend([c for c in possibles if (c['torrent'] and c['torrent'].status == "stopped" and c['torrent'].error == 0) and c['has_rars']])
+	# printall(to_extract_and_remove, "finished torrent with rars, to extract and remove torrent and data:")
 
+	# tc.remove_torrent(ids, delete_data=True)
 
-if __name__ == "__main__":
-	take_action = False
+@click.command()
+@click.option('--completed_dir', prompt=True, help='Root of download location')
+@click.option('--move_dir', prompt=True, help='Dir to move finished torrents to')
+@click.option('--dest', prompt=True, help='Extracted files destination')
+@click.option('--dry_run', help='Don\'t actually make changes', default=False)
+def main(completed_dir, move_dir, dest, dry_run):
+	# TODO params
+	tc = transmissionrpc.Client('mac-mini.local', port=9091)
 
-	complete_dir = '/home/joel/mac-mini.joel/Media Downloads/completed'
-	out_dir = '/home/joel/mac-mini.joel/Media Downloads/out_tv'
-	extract_dir = "dest"
+	manage(tc, completed_dir, move_dir, dest, dry_run)
 
-	main(complete_dir, out_dir, take_action)
+if __name__ == '__main__':
+	sys.exit(main())
