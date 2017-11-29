@@ -120,3 +120,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = '/static/'
+
+TRANSMISSION_CONFIG = {
+    'address': os.getenv('TRANSMISSION_URL', 'localhost'),
+    'port': os.getenv('TRANSMISSION_PORT', 9091),
+    'user': os.getenv('TRANSMISSION_USER', None),
+    'password': os.getenv('TRANSMISSION_PASSWORD', None),
+    'timeout': os.getenv('TRANSMISSION_TIMEOUT', None),
+}
