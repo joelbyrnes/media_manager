@@ -121,6 +121,48 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
+            'datefmt': "%Y-%m-%d %H:%M:%S"
+        },
+        'simple': {
+            'format': '[%(asctime)s] %(levelname)s %(message)s'
+        },
+    },
+    'handlers': {
+        'logfile': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, "logs/app.log"),
+            'maxBytes': 52428800,
+            'backupCount': 2,
+            'formatter': 'verbose',
+        },
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['logfile', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        # default logger for anything not matched more explicitly above
+        '': {
+            'handlers': ['logfile', 'console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}
+
 TRANSMISSION_CONFIG = {
     'address': os.getenv('TRANSMISSION_URL', 'localhost'),
     'port': os.getenv('TRANSMISSION_PORT', 9091),
