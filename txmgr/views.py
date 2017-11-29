@@ -5,18 +5,20 @@ import logging
 
 import transmissionrpc
 from django.conf import settings
-from django.shortcuts import render
+from django.views import generic
 
 logger = logging.getLogger(__name__)
 
 
-def index(request):
-    logger.debug("Connect to Transmission")
-    tc = transmissionrpc.Client(**settings.TRANSMISSION_CONFIG)
-    logger.debug("get_torrents")
-    torrents = tc.get_torrents()
-    logger.debug("got torrents")
+class IndexView(generic.ListView):
+    template_name = 'txmgr/index.html'
+    context_object_name = 'torrents'
 
-    torrents = sorted(torrents, key=lambda x: x.name)
+    def get_queryset(self):
+        logger.debug("Connect to Transmission")
+        tc = transmissionrpc.Client(**settings.TRANSMISSION_CONFIG)
+        logger.debug("get_torrents")
+        torrents = tc.get_torrents()
+        logger.debug("got torrents")
 
-    return render(request, 'txmgr/index.html', {'torrents': torrents})
+        return sorted(torrents, key=lambda x: x.name)
