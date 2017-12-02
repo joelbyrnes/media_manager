@@ -1,4 +1,5 @@
-from settings import *
+# noinspection PyUnresolvedReferences
+from dmproject.settings import *
 
 from socket import gethostname, gethostbyname
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', gethostname(), gethostbyname(gethostname())]
