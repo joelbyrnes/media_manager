@@ -44,11 +44,9 @@ class TorrentView(object):
         type = "movie"
 
         # tvmatch = "name.match /(.*)\.[sS]([0-9]{1,2})[eE]([0-9]{1,2})/"
-        tvmatch = re.search("(.*)\.[sS]([0-9]{1,2})[eE]([0-9]{1,2})", self.name)
+        tvmatch = re.search("(.*)[ .][sS]([0-9]{1,2})[eE]([0-9]{1,2})", self.name)
         # seasonmatch = "name.match /(.*)\.[sS]([0-9]{1,2})/"
-        seasonmatch = re.search("(.*)\.[sS]([0-9]{1,2})", self.name)
-
-        # incorrect movie   The Big Bang Theory S09E24 The Convergence Convergence 720p WEB-DL DD5.1 H.264-Oosh.mkv
+        seasonmatch = re.search("(.*)[ .][sS]([0-9]{1,2})", self.name)
 
         if tvmatch:
             type = "episode"
@@ -63,7 +61,7 @@ class TorrentView(object):
 
     def media_name(self):
         if self.media_type() == 'episode':
-            tvmatch = re.match("(.*)\.[sS]([0-9]{1,2})[eE]([0-9]{1,2})", self.name)
+            tvmatch = re.match("(.*)[ .][sS]([0-9]{1,2})[eE]([0-9]{1,2})", self.name)
             show = tvmatch.group(1).replace('.', ' ')
 
             print("looks like TV show: " + show)
@@ -72,7 +70,7 @@ class TorrentView(object):
             return show
 
         elif self.media_type() == 'season':
-            seasonmatch = re.match("(.*)\.[sS]([0-9]{1,2})", self.name)
+            seasonmatch = re.match("(.*)[ .][sS]([0-9]{1,2})", self.name)
             show = seasonmatch.group(1).replace('.', ' ')
 
             print("looks like season pack of TV show: " + show)
@@ -81,11 +79,19 @@ class TorrentView(object):
 
         elif self.media_type() == "movie":
             moviematch = re.match("(.*)([1-2]{1}[0-9]{3})[ .]", self.name)
-            movie = moviematch.group(1).replace('.', ' ').strip()
+            if moviematch:
+                movie = moviematch.group(1).replace('.', ' ').strip()
 
-            print("looks like movie: {}".format(movie))
-            print("year: {}".format(moviematch.group(2)))
-            return self.name
+                print("looks like movie: {}".format(movie))
+                print("year: {}".format(moviematch.group(2)))
+                return movie
+
+            else:   # probably no year
+                moviematch = re.match("(.*)[ .]", self.name)
+                movie = moviematch.group(1).replace('.', ' ').strip()
+                print("looks like movie: {}".format(movie))
+                return movie
+
 
 
 class IndexView(generic.ListView):
