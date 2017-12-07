@@ -6,6 +6,8 @@ import re
 
 import transmissionrpc
 from datetime import datetime
+
+import PTN
 from django.conf import settings
 from django.views import generic
 
@@ -23,6 +25,7 @@ def list_has_rars(files):
 class TorrentView(object):
     def __init__(self, torrent):
         self.torrent = torrent
+        self.media_info = self.parse_media_info(torrent.name)
 
     def __getattr__(self, key):
         return getattr(self.torrent, key)
@@ -40,58 +43,45 @@ class TorrentView(object):
         return datetime.fromtimestamp(self.torrent.doneDate)
 
     def media_type(self):
-        # default
-        type = "movie"
+        if self.media_info.get('episode'):
+            return 'episode'
+        elif self.media_info.get('season'):
+            return 'season'
 
-        # tvmatch = "name.match /(.*)\.[sS]([0-9]{1,2})[eE]([0-9]{1,2})/"
-        tvmatch = re.search("(.*)[ .][sS]([0-9]{1,2})[eE]([0-9]{1,2})", self.name)
-        # seasonmatch = "name.match /(.*)\.[sS]([0-9]{1,2})/"
         seasonmatch = re.search("(.*)[ .][sS]([0-9]{1,2})", self.name)
 
-        if tvmatch:
-            type = "episode"
-        elif seasonmatch:
-            type = "season"
+        if seasonmatch:
+            return "season"
 
         # todo multi-season
         # eg Mission.Impossible.1966.S01-S04.Complete.DVDRip.XviD-TD
         # eg The.Wire.S01-S05.720p.BluRay.nHD.x264-NhaNc3
 
-        return type
+        return 'movie'
 
-    def media_name(self):
-        if self.media_type() == 'episode':
-            tvmatch = re.match("(.*)[ .][sS]([0-9]{1,2})[eE]([0-9]{1,2})", self.name)
-            show = tvmatch.group(1).replace('.', ' ')
+    def media_title(self):
+        return self.media_info.get('title')
 
-            print("looks like TV show: " + show)
-            print("season " + tvmatch.group(2))
-            print("episode " + tvmatch.group(3))
-            return show
+    @staticmethod
+    def parse_media_info(name):
+        parsed = PTN.parse(name)
 
-        elif self.media_type() == 'season':
-            seasonmatch = re.match("(.*)[ .][sS]([0-9]{1,2})", self.name)
-            show = seasonmatch.group(1).replace('.', ' ')
+        if parsed.get('episode'):
+            return parsed
 
-            print("looks like season pack of TV show: " + show)
+            # additional processing required
+
+        seasonmatch = re.search("(.*)[ .][sS]([0-9]{1,2})", name)
+
+        if seasonmatch:
+            parsed['title'] = seasonmatch.group(1).replace('.', ' ')
+
+            print("looks like season pack of TV show: " + parsed['title'])
             print("season " + seasonmatch.group(2))
-            return show
 
-        elif self.media_type() == "movie":
-            moviematch = re.match("(.*)([1-2]{1}[0-9]{3})[ .]", self.name)
-            if moviematch:
-                movie = moviematch.group(1).replace('.', ' ').strip()
+            parsed['season'] = seasonmatch.group(2)
 
-                print("looks like movie: {}".format(movie))
-                print("year: {}".format(moviematch.group(2)))
-                return movie
-
-            else:   # probably no year
-                moviematch = re.match("(.*)[ .]", self.name)
-                movie = moviematch.group(1).replace('.', ' ').strip()
-                print("looks like movie: {}".format(movie))
-                return movie
-
+        return parsed
 
 
 class IndexView(generic.ListView):

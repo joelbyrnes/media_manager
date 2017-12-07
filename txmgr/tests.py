@@ -15,17 +15,17 @@ class TorrentMediaTestCase(TestCase):
         t = TorrentView(Torrent(None, dict(id=1, name='Some.Show.S07E13.720p.HDTV.x264-AVS')))
         assert t.name == 'Some.Show.S07E13.720p.HDTV.x264-AVS'
         assert t.media_type() == 'episode'
-        assert t.media_name() == 'Some Show'
+        assert t.media_title() == 'Some Show'
 
     def test_movie(self):
         t = TorrentView(Torrent(None, dict(id=1, name='Fantastic.Film.2016.720p.BluRay.x264-DRONES')))
         assert t.media_type() == 'movie'
-        assert t.media_name() == 'Fantastic Film', t.media_name()
+        assert t.media_title() == 'Fantastic Film', t.media_name()
 
     def test_season(self):
         t = TorrentView(Torrent(None, dict(id=1, name='Germanium.Mountain.S01.720p.HDTV.DD5.1.x264-CtrlHD')))
         assert t.media_type() == 'season'
-        assert t.media_name() == 'Germanium Mountain'
+        assert t.media_title() == 'Germanium Mountain'
 
     def test_many(self):
         types = {
@@ -49,8 +49,8 @@ class TorrentMediaTestCase(TestCase):
             if not t.media_type() == mt:
                 failed += 1
                 sys.stderr.write("{} type should be {} but was {}\n".format(name, mt, t.media_type()))
-            if not t.media_name() == mn:
+            if not t.media_title() == mn:
                 failed += 1
-                sys.stderr.write("{} name should be {} but was {}\n".format(name, mn, t.media_name()))
+                sys.stderr.write("{} name should be {} but was {}\n".format(name, mn, t.media_title()))
 
         assert failed == 0, "{} checks failed".format(failed)
