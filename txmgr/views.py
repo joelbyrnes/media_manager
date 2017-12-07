@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 import logging
+import re
 
 import transmissionrpc
 from datetime import datetime
@@ -37,6 +38,54 @@ class TorrentView(object):
 
     def done_date(self):
         return datetime.fromtimestamp(self.torrent.doneDate)
+
+    def media_type(self):
+        # default
+        type = "movie"
+
+        # tvmatch = "name.match /(.*)\.[sS]([0-9]{1,2})[eE]([0-9]{1,2})/"
+        tvmatch = re.search("(.*)\.[sS]([0-9]{1,2})[eE]([0-9]{1,2})", self.name)
+        # seasonmatch = "name.match /(.*)\.[sS]([0-9]{1,2})/"
+        seasonmatch = re.search("(.*)\.[sS]([0-9]{1,2})", self.name)
+
+        # incorrect movie   The Big Bang Theory S09E24 The Convergence Convergence 720p WEB-DL DD5.1 H.264-Oosh.mkv
+
+        if tvmatch:
+            type = "episode"
+        elif seasonmatch:
+            type = "season"
+
+        # todo multi-season
+        # eg Mission.Impossible.1966.S01-S04.Complete.DVDRip.XviD-TD
+        # eg The.Wire.S01-S05.720p.BluRay.nHD.x264-NhaNc3
+
+        return type
+
+    def media_name(self):
+        if self.media_type() == 'episode':
+            tvmatch = re.match("(.*)\.[sS]([0-9]{1,2})[eE]([0-9]{1,2})", self.name)
+            show = tvmatch.group(1).replace('.', ' ')
+
+            print("looks like TV show: " + show)
+            print("season " + tvmatch.group(2))
+            print("episode " + tvmatch.group(3))
+            return show
+
+        elif self.media_type() == 'season':
+            seasonmatch = re.match("(.*)\.[sS]([0-9]{1,2})", self.name)
+            show = seasonmatch.group(1).replace('.', ' ')
+
+            print("looks like season pack of TV show: " + show)
+            print("season " + seasonmatch.group(2))
+            return show
+
+        elif self.media_type() == "movie":
+            moviematch = re.match("(.*)([1-2]{1}[0-9]{3})[ .]", self.name)
+            movie = moviematch.group(1).replace('.', ' ').strip()
+
+            print("looks like movie: {}".format(movie))
+            print("year: {}".format(moviematch.group(2)))
+            return self.name
 
 
 class IndexView(generic.ListView):
