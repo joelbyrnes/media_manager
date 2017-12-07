@@ -34,15 +34,12 @@
             {% if torrents %}
                 {% for t in torrents %}
                     <div class="torrent">
-                        <div class="torrent-title">{{ t.name }}</div>
+                        <span class="torrent-title">{{ t.name }}</span> {{ t.percent_done_string }} {{ t.status }}<br>
                         <div>
-                            {{ t.status }}<br/>
-                            {{ t.isFinished }}<br/>
-                            {{ t.percent_done_string }}<br/>
-                            Done date: {{ t.done_date }}<br/>
+                            Type: {{ t.media_type }}<br/>
+{#                            Done date: {{ t.done_date }}<br/>#}
                             Files: {{ t.files|length }}<br/>
                             Has rars: {{ t.has_rars }}<br/>
-                            Type: {{ t.media_type }}<br/>
                         </div>
                     </div>
                 {% endfor %}
