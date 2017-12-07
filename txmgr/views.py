@@ -47,15 +47,8 @@ class TorrentView(object):
             return 'episode'
         elif self.media_info.get('season'):
             return 'season'
-
-        seasonmatch = re.search("(.*)[ .][sS]([0-9]{1,2})", self.name)
-
-        if seasonmatch:
-            return "season"
-
-        # todo multi-season
-        # eg Mission.Impossible.1966.S01-S04.Complete.DVDRip.XviD-TD
-        # eg The.Wire.S01-S05.720p.BluRay.nHD.x264-NhaNc3
+        elif self.media_info.get('seasons'):
+            return 'seasons'
 
         return 'movie'
 
@@ -69,19 +62,55 @@ class TorrentView(object):
         if parsed.get('episode'):
             return parsed
 
-            # additional processing required
+        # additional processing required
+
+        seasonsmatch = re.search("(.*)[ .]([sS][0-9]{1,2}-[sS][0-9]{1,2}|COMPLETE)", name)
+
+        if seasonsmatch:
+            parsed['title'] = seasonsmatch.group(1).replace('.', ' ')
+            parsed['seasons'] = seasonsmatch.group(2)
+            return parsed
 
         seasonmatch = re.search("(.*)[ .][sS]([0-9]{1,2})", name)
 
         if seasonmatch:
             parsed['title'] = seasonmatch.group(1).replace('.', ' ')
-
-            print("looks like season pack of TV show: " + parsed['title'])
-            print("season " + seasonmatch.group(2))
-
             parsed['season'] = seasonmatch.group(2)
 
         return parsed
+
+    def media_name(self):
+        if self.media_type() == 'episode':
+            tvmatch = re.match("(.*)[ .][sS]([0-9]{1,2})[eE]([0-9]{1,2})", self.name)
+            show = tvmatch.group(1).replace('.', ' ')
+
+            print("looks like TV show: " + show)
+            print("season " + tvmatch.group(2))
+            print("episode " + tvmatch.group(3))
+            return show
+
+        elif self.media_type() == 'season':
+            seasonmatch = re.match("(.*)[ .][sS]([0-9]{1,2})", self.name)
+            show = seasonmatch.group(1).replace('.', ' ')
+
+            print("looks like season pack of TV show: " + show)
+            print("season " + seasonmatch.group(2))
+            return show
+
+        elif self.media_type() == "movie":
+            moviematch = re.match("(.*)([1-2]{1}[0-9]{3})[ .]", self.name)
+            if moviematch:
+                movie = moviematch.group(1).replace('.', ' ').strip()
+
+                print("looks like movie: {}".format(movie))
+                print("year: {}".format(moviematch.group(2)))
+                return movie
+
+            else:   # probably no year
+                moviematch = re.match("(.*)[ .]", self.name)
+                movie = moviematch.group(1).replace('.', ' ').strip()
+                print("looks like movie: {}".format(movie))
+                return movie
 
 
 class IndexView(generic.ListView):

@@ -27,6 +27,18 @@ class TorrentMediaTestCase(TestCase):
         assert t.media_type() == 'season'
         assert t.media_title() == 'Germanium Mountain'
 
+    def test_seasons(self):
+        t = TorrentView(Torrent(None, dict(id=1, name='The.Wire.S01-S05.720p.BluRay.nHD.x264-NhaNc3')))
+        assert t.media_type() == 'seasons'
+        assert t.media_title() == 'The Wire'
+        assert t.media_info['seasons'] == 'S01-S05'
+
+    def test_seasons_complete(self):
+        t = TorrentView(Torrent(None, dict(id=1, name='The.X-Files.COMPLETE.720p.WEBRip.H.264-TD')))
+        assert t.media_type() == 'seasons'
+        assert t.media_title() == 'The X-Files'
+        assert t.media_info['seasons'] == 'COMPLETE'
+
     def test_many(self):
         types = {
             'Some.Show.S07E13.720p.HDTV.x264-AVS': ('episode', 'Some Show'),
@@ -38,8 +50,8 @@ class TorrentMediaTestCase(TestCase):
                 ('episode', 'Marvels Agents of S H I E L D'),
             'The Big Bang Theory S09E24 The Convergence Convergence 720p WEB-DL DD5.1 H.264-Oosh.mkv':
                 ('episode', 'The Big Bang Theory'),
-            'The.X-Files.COMPLETE.720p.WEBRip.H.264-TD': ('multi-season', 'The X-Files'),
-            'The.Wire.S01-S05.720p.BluRay.nHD.x264-NhaNc3': ('multi-season', 'The Wire'),
+            'The.X-Files.COMPLETE.720p.WEBRip.H.264-TD': ('seasons', 'The X-Files'),
+            'The.Wire.S01-S05.720p.BluRay.nHD.x264-NhaNc3': ('seasons', 'The Wire'),
         }
 
         failed = 0
