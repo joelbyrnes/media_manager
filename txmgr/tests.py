@@ -52,6 +52,7 @@ class TorrentMediaTestCase(TestCase):
                 ('episode', 'The Big Bang Theory'),
             'The.X-Files.COMPLETE.720p.WEBRip.H.264-TD': ('seasons', 'The X-Files'),
             'The.Wire.S01-S05.720p.BluRay.nHD.x264-NhaNc3': ('seasons', 'The Wire'),
+            'X-Men Apocalypse 2016 AVC Dts D3FiL3R': ('movie', 'X-Men Apocalypse'),
         }
 
         failed = 0

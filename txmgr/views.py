@@ -76,41 +76,15 @@ class TorrentView(object):
         if seasonmatch:
             parsed['title'] = seasonmatch.group(1).replace('.', ' ')
             parsed['season'] = seasonmatch.group(2)
+            return parsed
+
+        if parsed.get('year'):
+            # more likely a movie if not an episode
+            moviematch = re.match("(.*)([1-2]{1}[0-9]{3})[ .]", name)
+            if moviematch:
+                parsed['title'] = moviematch.group(1).replace('.', ' ').strip()
 
         return parsed
-
-    def media_name(self):
-        if self.media_type() == 'episode':
-            tvmatch = re.match("(.*)[ .][sS]([0-9]{1,2})[eE]([0-9]{1,2})", self.name)
-            show = tvmatch.group(1).replace('.', ' ')
-
-            print("looks like TV show: " + show)
-            print("season " + tvmatch.group(2))
-            print("episode " + tvmatch.group(3))
-            return show
-
-        elif self.media_type() == 'season':
-            seasonmatch = re.match("(.*)[ .][sS]([0-9]{1,2})", self.name)
-            show = seasonmatch.group(1).replace('.', ' ')
-
-            print("looks like season pack of TV show: " + show)
-            print("season " + seasonmatch.group(2))
-            return show
-
-        elif self.media_type() == "movie":
-            moviematch = re.match("(.*)([1-2]{1}[0-9]{3})[ .]", self.name)
-            if moviematch:
-                movie = moviematch.group(1).replace('.', ' ').strip()
-
-                print("looks like movie: {}".format(movie))
-                print("year: {}".format(moviematch.group(2)))
-                return movie
-
-            else:   # probably no year
-                moviematch = re.match("(.*)[ .]", self.name)
-                movie = moviematch.group(1).replace('.', ' ').strip()
-                print("looks like movie: {}".format(movie))
-                return movie
 
 
 class IndexView(generic.ListView):
