@@ -91,9 +91,13 @@ class TorrentView(object):
 
 def find_plex_episode(section, title, season, episode):
     try:
-        show = section.get(title)
-        season = show.season(season)
-        return next(filter(lambda e: e.index == episode, season.episodes()), None)
+        show = section.search(title)
+        if not show:
+            return None
+        if len(show) > 1:
+            logger.warning("Found {} Plex matches for {}".format(len(show), title))
+        season = show[0].season(season)
+        return next(filter(lambda ep: ep.index == episode, season.episodes()), None)
     except NotFound as e:
         return None
 
@@ -102,13 +106,13 @@ def find_plex_media_for_torrent(plex, tv):
     result = None
     try:
         if tv.media_type() == 'movie':
-            result = plex.library.section('Downloaded Movies').get(tv.media_title())
+            result = plex.library.section('Downloaded Movies').search(tv.media_title())
             if not result:
-                result = plex.library.section('Movies').get(tv.media_title())
+                result = plex.library.section('Movies').search(tv.media_title())
         elif tv.media_type() == 'season' or tv.media_type() == 'seasons':
-            result = plex.library.section('Downloaded TV').get(tv.media_title())
+            result = plex.library.section('Downloaded TV').search(tv.media_title())
             if not result:
-                result = plex.library.section('TV Shows').get(tv.media_title())
+                result = plex.library.section('TV Shows').search(tv.media_title())
         elif tv.media_type() == 'episode':
             result = find_plex_episode(plex.library.section('Downloaded TV'), tv.media_title(),
                                        tv.media_info['season'], tv.media_info['episode'])
@@ -116,14 +120,18 @@ def find_plex_media_for_torrent(plex, tv):
             if not result:
                 result = find_plex_episode(plex.library.section('TV Shows'), tv.media_title(),
                                            tv.media_info['season'], tv.media_info['episode'])
+            return result
 
     except NotFound as e:
         pass
 
     if not result:
-        logger.debug("Can't find {} in Plex".format(tv.media_title()))
+        logger.debug("No result for {} in Plex".format(tv.media_title()))
+        return None
 
-    return result
+    if len(result) > 1:
+        logger.warning("Found {} Plex matches for {}".format(len(result), tv.media_title()))
+        return result[0]
 
 
 class IndexView(generic.ListView):
