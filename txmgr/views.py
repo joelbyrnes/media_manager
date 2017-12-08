@@ -89,17 +89,33 @@ class TorrentView(object):
         return parsed
 
 
+def find_plex_episode(section, title, season, episode):
+    try:
+        show = section.get(title)
+        season = show.season(season)
+        return next(filter(lambda e: e.index == episode, season.episodes()), None)
+    except NotFound as e:
+        return None
+
+
 def find_plex_media_for_torrent(plex, tv):
     result = None
     try:
         if tv.media_type() == 'movie':
             result = plex.library.section('Downloaded Movies').get(tv.media_title())
+            if not result:
+                result = plex.library.section('Movies').get(tv.media_title())
         elif tv.media_type() == 'season' or tv.media_type() == 'seasons':
             result = plex.library.section('Downloaded TV').get(tv.media_title())
+            if not result:
+                result = plex.library.section('TV Shows').get(tv.media_title())
         elif tv.media_type() == 'episode':
-            show = plex.library.section('Downloaded TV').get(tv.media_title())
-            season = show.season(tv.media_info['season'])
-            result = next(filter(lambda e: e.index == tv.media_info['episode'], season.episodes()), None)
+            result = find_plex_episode(plex.library.section('Downloaded TV'), tv.media_title(),
+                                       tv.media_info['season'], tv.media_info['episode'])
+
+            if not result:
+                result = find_plex_episode(plex.library.section('TV Shows'), tv.media_title(),
+                                           tv.media_info['season'], tv.media_info['episode'])
 
     except NotFound as e:
         pass
