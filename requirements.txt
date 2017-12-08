@@ -3,3 +3,4 @@ click
 django<1.12
 django-bootstrap3
 parse-torrent-name
+plexapi

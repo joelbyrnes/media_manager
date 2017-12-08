@@ -10,6 +10,8 @@ from datetime import datetime
 import PTN
 from django.conf import settings
 from django.views import generic
+from plexapi.exceptions import NotFound
+from plexapi.server import PlexServer
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +89,27 @@ class TorrentView(object):
         return parsed
 
 
+def find_plex_media_for_torrent(plex, tv):
+    result = None
+    try:
+        if tv.media_type() == 'movie':
+            result = plex.library.section('Downloaded Movies').get(tv.media_title())
+        elif tv.media_type() == 'season' or tv.media_type() == 'seasons':
+            result = plex.library.section('Downloaded TV').get(tv.media_title())
+        elif tv.media_type() == 'episode':
+            show = plex.library.section('Downloaded TV').get(tv.media_title())
+            season = show.season(tv.media_info['season'])
+            result = next(filter(lambda e: e.index == tv.media_info['episode'], season.episodes()), None)
+
+    except NotFound as e:
+        pass
+
+    if not result:
+        logger.debug("Can't find {} in Plex".format(tv.media_title()))
+
+    return result
+
+
 class IndexView(generic.ListView):
     template_name = 'txmgr/index.html'
     context_object_name = 'torrents'
@@ -94,8 +117,18 @@ class IndexView(generic.ListView):
     def get_queryset(self):
         logger.debug("Connect to Transmission")
         tc = transmissionrpc.Client(**settings.TRANSMISSION_CONFIG)
+
+        logger.debug("Connect to Plex")
+        baseurl = 'http://192.168.0.10:32400'
+        token = 'abcd'
+        plex = PlexServer(baseurl, token)
+
+        torrents = []
         logger.debug("get_torrents")
-        torrents = map(TorrentView, tc.get_torrents())
+        for t in tc.get_torrents()[0:30]:
+            tv = TorrentView(t)
+            tv.plexinfo = find_plex_media_for_torrent(plex, tv)
+            torrents.append(tv)
         logger.debug("got torrents")
 
         return sorted(torrents, key=lambda x: x.name)

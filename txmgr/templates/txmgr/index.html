@@ -36,7 +36,10 @@
                     <div class="torrent">
                         <span class="torrent-title">{{ t.name }}</span> {{ t.percent_done_string }} {{ t.status }}<br>
                         <div>
-                            Type: {{ t.media_type }}<br/>
+                            {{ t.media_type }}: {{ t.media_title }}<br/>
+                            {% if t.plexinfo %}
+                                Plex: {{ t.plexinfo.type }}: {{ t.plexinfo.title }}<br/>
+                            {% endif %}
 {#                            Done date: {{ t.done_date }}<br/>#}
                             Files: {{ t.files|length }}<br/>
                             Has rars: {{ t.has_rars }}<br/>
