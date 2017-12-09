@@ -135,10 +135,19 @@ def find_plex_media_for_torrent(plex, tv):
             result = find_plex_best_match(plex.library.section('Downloaded Movies'), tv.media_title())
             if not result:
                 result = find_plex_best_match(plex.library.section('Movies'), tv.media_title())
-        elif tv.media_type() == 'season' or tv.media_type() == 'seasons':
+
+        elif tv.media_type() == 'season':
             result = find_plex_best_match(plex.library.section('Downloaded TV'), tv.media_title())
             if not result:
                 result = find_plex_best_match(plex.library.section('TV Shows'), tv.media_title())
+            if result:
+                result = result.season(tv.media_info['season'])
+
+        elif tv.media_type() == 'seasons':
+            result = find_plex_best_match(plex.library.section('Downloaded TV'), tv.media_title())
+            if not result:
+                result = find_plex_best_match(plex.library.section('TV Shows'), tv.media_title())
+
         elif tv.media_type() == 'episode':
             result = find_plex_episode(plex.library.section('Downloaded TV'), tv.media_title(),
                                        tv.media_info['season'], tv.media_info['episode'])
