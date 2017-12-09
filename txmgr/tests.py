@@ -16,6 +16,8 @@ class TorrentMediaTestCase(TestCase):
         assert t.name == 'Some.Show.S07E13.720p.HDTV.x264-AVS'
         assert t.media_type() == 'episode'
         assert t.media_title() == 'Some Show'
+        assert t.media_info['season'] == 7
+        assert t.media_info['episode'] == 13
 
     def test_movie(self):
         t = TorrentView(Torrent(None, dict(id=1, name='Fantastic.Film.2016.720p.BluRay.x264-DRONES')))
@@ -26,18 +28,27 @@ class TorrentMediaTestCase(TestCase):
         t = TorrentView(Torrent(None, dict(id=1, name='Germanium.Mountain.S01.720p.HDTV.DD5.1.x264-CtrlHD')))
         assert t.media_type() == 'season'
         assert t.media_title() == 'Germanium Mountain'
+        assert t.media_info['season'] == 1, t.media_info['season']
+        assert t.media_info.get('episode') is None
 
     def test_seasons(self):
         t = TorrentView(Torrent(None, dict(id=1, name='The.Wire.S01-S05.720p.BluRay.nHD.x264-NhaNc3')))
         assert t.media_type() == 'seasons'
         assert t.media_title() == 'The Wire'
         assert t.media_info['seasons'] == 'S01-S05'
+        assert t.media_info.get('episode') is None
 
     def test_seasons_complete(self):
         t = TorrentView(Torrent(None, dict(id=1, name='The.X-Files.COMPLETE.720p.WEBRip.H.264-TD')))
         assert t.media_type() == 'seasons'
         assert t.media_title() == 'The X-Files'
         assert t.media_info['seasons'] == 'COMPLETE'
+        assert t.media_info.get('episode') is None
+
+    def test_titles_with_acronyms(self):
+        t = TorrentView(Torrent(None, dict(id=1, name='Marvels.Agents.of.S.H.I.E.L.D.S04E05.720p.HEVC.x265-MeGusta')))
+        assert t.media_type() == 'episode'
+        assert t.media_title() == 'Marvels Agents of S.H.I.E.L.D'
 
     def test_many(self):
         types = {

@@ -77,7 +77,7 @@ class TorrentView(object):
 
         if seasonmatch:
             parsed['title'] = seasonmatch.group(1).replace('.', ' ')
-            parsed['season'] = seasonmatch.group(2)
+            parsed['season'] = int(seasonmatch.group(2))
             return parsed
 
         if parsed.get('year'):
