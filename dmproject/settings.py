@@ -180,3 +180,9 @@ TRANSMISSION_CONFIG = {
     'password': os.getenv('TRANSMISSION_PASSWORD', None),
     'timeout': os.getenv('TRANSMISSION_TIMEOUT', None),
 }
+
+PLEX_CONFIG = {
+    'baseurl': os.getenv('PLEX_URL', 'http://localhost:32400'),
+    'token': os.getenv('PLEX_TOKEN', None),
+    'timeout': os.getenv('PLEX_TIMEOUT', None),
+}

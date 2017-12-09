@@ -156,9 +156,7 @@ class IndexView(generic.ListView):
         tc = transmissionrpc.Client(**settings.TRANSMISSION_CONFIG)
 
         logger.debug("Connect to Plex")
-        baseurl = 'http://192.168.0.10:32400'
-        token = 'abcd'
-        plex = PlexServer(baseurl, token)
+        plex = PlexServer(**settings.PLEX_CONFIG)
 
         torrents = []
         logger.debug("get_torrents")
