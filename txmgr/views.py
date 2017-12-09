@@ -26,9 +26,10 @@ def list_has_rars(files):
 
 
 class TorrentView(object):
-    def __init__(self, torrent):
+    def __init__(self, torrent, plex_media=None):
         self.torrent = torrent
-        self.media_info = self.parse_media_info(torrent.name)
+        self.media_info = parse_media_info(torrent.name)
+        self.plex_media = plex_media
 
     def __getattr__(self, key):
         return getattr(self.torrent, key)
@@ -58,36 +59,44 @@ class TorrentView(object):
     def media_title(self):
         return self.media_info.get('title')
 
-    @staticmethod
-    def parse_media_info(name):
-        parsed = PTN.parse(name)
+    def plex_browse_url(self):
+        # there's probably a better way to do this and it may not work in all browsers or cases
+        # eg http://192.168.0.10:32400/web/index.html#!/server/
+        # a18ea0e126194abcdba1b3ed46fb007c496cabcd/details?key=%2Flibrary%2Fmetadata%2F24188
+        server = self.plex_media._server
+        return "{}/web/index.html#!/server/{}/details?key={}".format(server._baseurl, server.machineIdentifier,
+                                                                     self.plex_media.key)
 
-        if parsed.get('episode'):
-            return parsed
 
-        # additional processing required
+def parse_media_info(name):
+    parsed = PTN.parse(name)
 
-        seasonsmatch = re.search("(.*)[ .]([sS][0-9]{1,2}-[sS][0-9]{1,2}|COMPLETE)", name)
-
-        if seasonsmatch:
-            parsed['title'] = seasonsmatch.group(1).replace('.', ' ')
-            parsed['seasons'] = seasonsmatch.group(2)
-            return parsed
-
-        seasonmatch = re.search("(.*)[ .][sS]([0-9]{1,2})", name)
-
-        if seasonmatch:
-            parsed['title'] = seasonmatch.group(1).replace('.', ' ')
-            parsed['season'] = int(seasonmatch.group(2))
-            return parsed
-
-        if parsed.get('year'):
-            # more likely a movie if not an episode
-            moviematch = re.match("(.*)([1-2]{1}[0-9]{3})[ .]", name)
-            if moviematch:
-                parsed['title'] = moviematch.group(1).replace('.', ' ').strip()
-
+    if parsed.get('episode'):
         return parsed
+
+    # additional processing required
+
+    seasonsmatch = re.search("(.*)[ .]([sS][0-9]{1,2}-[sS][0-9]{1,2}|COMPLETE)", name)
+
+    if seasonsmatch:
+        parsed['title'] = seasonsmatch.group(1).replace('.', ' ')
+        parsed['seasons'] = seasonsmatch.group(2)
+        return parsed
+
+    seasonmatch = re.search("(.*)[ .][sS]([0-9]{1,2})", name)
+
+    if seasonmatch:
+        parsed['title'] = seasonmatch.group(1).replace('.', ' ')
+        parsed['season'] = int(seasonmatch.group(2))
+        return parsed
+
+    if parsed.get('year'):
+        # more likely a movie if not an episode
+        moviematch = re.match("(.*)([1-2]{1}[0-9]{3})[ .]", name)
+        if moviematch:
+            parsed['title'] = moviematch.group(1).replace('.', ' ').strip()
+
+    return parsed
 
 
 def find_plex_episode(section, title, season, episode):
@@ -177,7 +186,7 @@ class IndexView(generic.ListView):
         logger.debug("get_torrents")
         for t in tc.get_torrents():
             tv = TorrentView(t)
-            tv.plexinfo = find_plex_media_for_torrent(plex, tv)
+            tv.plex_media = find_plex_media_for_torrent(plex, tv)
             torrents.append(tv)
         logger.debug("got torrents")
 

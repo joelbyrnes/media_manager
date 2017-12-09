@@ -20,6 +20,10 @@
                 color: red;
             }
 
+            .warning {
+                color: orange;
+            }
+
         </style>
     </head>
 
@@ -45,15 +49,15 @@
                         <span class="torrent-title">{{ t.name }}</span> {{ t.percent_done_string }} {{ t.status }}<br>
                         <div>
                             {{ t.media_type }}: {{ t.media_title }}<br/>
-                            {% if t.plexinfo %}
-                                <span class="no-problem">Plex: {{ t.plexinfo.type }}: {{ t.plexinfo.title }}</span><br/>
+                            {% if t.plex_media %}
+                                <span class="no-problem">Plex: {{ t.plex_media.type }}: <a href="{{ t.plex_browse_url }}">{{ t.plex_media.title }}</a></span><br/>
                             {% else %}
                                 <span class="problem">Not found in Plex</span><br/>
                             {% endif %}
 {#                            Done date: {{ t.done_date }}<br/>#}
                             Files: {{ t.files|length }}<br/>
                             {% if t.has_rars %}
-                                <span class="problem">Has rars</span><br/>
+                                <span class="warning">Has rars</span><br/>
                             {% else %}
                                 <span class="no-problem">No rars</span><br/>
                             {% endif %}
