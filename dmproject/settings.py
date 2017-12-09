@@ -186,3 +186,10 @@ PLEX_CONFIG = {
     'token': os.getenv('PLEX_TOKEN', None),
     'timeout': os.getenv('PLEX_TIMEOUT', None),
 }
+
+MYPLEX_CONFIG = {
+    'username': os.getenv('MYPLEX_USERNAME', None),
+    'password': os.getenv('MYPLEX_PASSWORD', None),
+    'token': os.getenv('MYPLEX_TOKEN', None),
+    'server': os.getenv('MYPLEX_SERVER', None),
+}

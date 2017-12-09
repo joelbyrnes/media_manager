@@ -11,6 +11,7 @@ import PTN
 from django.conf import settings
 from django.views import generic
 from plexapi.exceptions import NotFound
+from plexapi.myplex import MyPlexAccount
 from plexapi.server import PlexServer
 
 logger = logging.getLogger(__name__)
@@ -147,6 +148,20 @@ def find_plex_media_for_torrent(plex, tv):
     return result
 
 
+def get_plex():
+    if settings.PLEX_CONFIG.get('baseurl'):
+        return PlexServer(**settings.PLEX_CONFIG)
+    elif settings.MYPLEX_CONFIG.get('token'):
+        account = MyPlexAccount(settings.MYPLEX_CONFIG.get('token'))
+    elif settings.MYPLEX_CONFIG.get('username'):
+        account = MyPlexAccount(settings.MYPLEX_CONFIG.get('username'), settings.MYPLEX_CONFIG.get('password'))
+
+    plex = account.resource(settings.MYPLEX_CONFIG.get('server')).connect()
+    logger.debug("Using Plex account auth token {}".format(account.authenticationToken))
+
+    return plex
+
+
 class IndexView(generic.ListView):
     template_name = 'txmgr/index.html'
     context_object_name = 'torrents'
@@ -156,7 +171,7 @@ class IndexView(generic.ListView):
         tc = transmissionrpc.Client(**settings.TRANSMISSION_CONFIG)
 
         logger.debug("Connect to Plex")
-        plex = PlexServer(**settings.PLEX_CONFIG)
+        plex = get_plex()
 
         torrents = []
         logger.debug("get_torrents")
