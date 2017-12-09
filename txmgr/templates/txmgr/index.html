@@ -12,6 +12,14 @@
                 font-weight: bold;
             }
 
+            .no-problem {
+                color: green;
+            }
+
+            .problem {
+                color: red;
+            }
+
         </style>
     </head>
 
@@ -38,11 +46,17 @@
                         <div>
                             {{ t.media_type }}: {{ t.media_title }}<br/>
                             {% if t.plexinfo %}
-                                Plex: {{ t.plexinfo.type }}: {{ t.plexinfo.title }}<br/>
+                                <span class="no-problem">Plex: {{ t.plexinfo.type }}: {{ t.plexinfo.title }}</span><br/>
+                            {% else %}
+                                <span class="problem">Not found in Plex</span><br/>
                             {% endif %}
 {#                            Done date: {{ t.done_date }}<br/>#}
                             Files: {{ t.files|length }}<br/>
-                            Has rars: {{ t.has_rars }}<br/>
+                            {% if t.has_rars %}
+                                <span class="problem">Has rars</span><br/>
+                            {% else %}
+                                <span class="no-problem">No rars</span><br/>
+                            {% endif %}
                         </div>
                     </div>
                 {% endfor %}
